@@ -1,0 +1,263 @@
+#+title: org-fast-latex-preview
+
+Fast batched LaTeX previews for Org buffers.
+
+This package is deliberately narrow:
+
+- Org buffers only
+- SVG previews via =dvisvgm=
+- Batched asynchronous rendering
+- Persistent on-disk cache
+- Hidden worker buffers instead of buffer-list spam
+- Bounded concurrent jobs for stability
+- Automatic context resolution from native Org preview state
+- Lean preview preamble only for stock/simple Org setups
+- Lifecycle teardown for buffer kill, mode disable, and revert
+- Cache validation so corrupt SVGs are discarded and regenerated
+
+The goal is not “replace every Org preview code path.” The goal is “make large
+math-heavy Org buffers feel fast and boring to use.”
+
+* Requirements
+
+- Emacs 29.1+
+- Org 9.7+
+- =latex= and =dvisvgm=
+
+Optional:
+
+- =xelatex= or =dvilualatex= if you prefer those engines
+
+* Profiles And Context Resolution
+
+The package now resolves render contexts through =org-fast-latex-preview-profile=:
+
+- =auto=
+  Follow the current Org preview configuration by default.  Stock Org setups
+  prefer the lean fast path, while customized preview setups reuse Org's
+  compiler/header/package choices.  The renderer can promote a failed render
+  request to a richer context before falling back to batch splitting.
+- =manual=
+  Use =org-fast-latex-preview-compiler= and
+  =org-fast-latex-preview-preamble-source= exactly.
+- =org-state=
+  Reuse the current Org preview/export preamble and infer the compiler from
+  Org's preview/export configuration.
+- =scientific-lualatex=
+  Optional built-in LuaLaTeX + =unicode-math= preset for heavier scientific
+  notes.  This is a convenience preset, not the recommended default path.
+
+For a setup that already customizes =org-format-latex-header=,
+=org-latex-packages-alist=, or =org-preview-latex-default-process=, =auto=
+tries to honor those choices instead of forcing OFLP-specific opinions on top.
+
+* Why the lean preamble default exists
+
+Org’s full export preamble is great for compatibility, but on some systems it
+makes =dvisvgm= dramatically slower. For plain/stock Org setups, OFLP therefore
+prefers a lean preview preamble. For customized Org setups, the default =auto=
+profile instead follows your existing Org preview state.
+
+In other words: configure Org normally first.  OFLP is meant to read that state,
+not replace it with a second configuration universe.
+
+If you want to force maximum compatibility with your Org export setup, set:
+
+#+begin_src emacs-lisp
+(setq org-fast-latex-preview-profile 'org-state)
+#+end_src
+
+For a built-in LuaLaTeX scientific preset:
+
+#+begin_src emacs-lisp
+(setq org-fast-latex-preview-profile 'scientific-lualatex)
+#+end_src
+
+* Installation
+
+Add the repository to your load path and load the package:
+
+#+begin_src emacs-lisp
+(add-to-list 'load-path "/path/to/org-fast-latex-preview/lisp")
+(require 'org-fast-latex-preview)
+#+end_src
+
+On Emacs 30+, you can also install directly from the repository with
+=package-vc-install= if you prefer not to manage =load-path= yourself.
+
+Minimal setup:
+
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook #'org-fast-latex-preview-mode)
+#+end_src
+
+That is enough to make Org's usual preview key path use OFLP in Org buffers.
+When =org-fast-latex-preview-mode= is active, =org-latex-preview= and
+=org-clear-latex-preview= are routed through OFLP.  Requiring the package by
+itself does not install global Org command shims.
+
+If you want it everywhere:
+
+#+begin_src emacs-lisp
+(global-org-fast-latex-preview-mode 1)
+#+end_src
+
+Optional custom macros and packages:
+
+#+begin_src emacs-lisp
+(setq org-fast-latex-preview-extra-preamble
+      "\\usepackage{mathtools}\n\\newcommand{\\dd}{\\mathop{}\\!\\mathrm{d}}\n")
+#+end_src
+
+* Customization
+
+The package is designed so most users should first configure Org normally and
+leave OFLP on =auto=.  The OFLP-specific knobs worth knowing are:
+
+- =org-fast-latex-preview-cache-directory=
+  Persistent cache root for rendered SVG previews.
+- =org-fast-latex-preview-scheduler=
+  Rendering scheduler policy.  Defaults to =adaptive=.
+- =org-fast-latex-preview-max-concurrent-jobs=
+  Stability/throughput tradeoff for large refreshes.
+- =org-fast-latex-preview-failure-strategy=
+  Defaults to =split= to isolate bad fragments.
+- =org-fast-latex-preview-max-image-size=
+  Temporary buffer-local =max-image-size= while OFLP mode is active.
+- =org-fast-latex-preview-override-org-commands=
+  When non-nil, =org-latex-preview= and =org-clear-latex-preview= route through
+  OFLP only while =org-fast-latex-preview-mode= is active.
+
+* Commands
+
+- =org-fast-latex-preview=
+  Org-style entry point for point, region, subtree, and buffer preview.
+- =org-fast-latex-preview-buffer=
+  Preview the whole buffer.
+- =org-fast-latex-preview-region=
+  Preview a region.
+- =org-fast-latex-preview-subtree=
+  Preview the current subtree.
+- =org-fast-latex-preview-refresh=
+  Refresh previews at point, subtree, or buffer.
+- =org-fast-latex-preview-clear=
+  Remove preview overlays.
+- =org-fast-latex-preview-clear-cache=
+  Delete cached SVG previews.
+
+* Behavior
+
+- Cached previews are reused directly.
+- Uncached previews are rendered in asynchronous batches.
+- Large refreshes use bounded job fanout instead of spawning everything at once.
+- =org-fast-latex-preview-mode= reveals source text at point.
+- With =org-fast-latex-preview-mode= enabled, Org's standard LaTeX preview
+  commands are transparently routed through OFLP in that buffer only.
+- OFLP can raise =max-image-size= buffer-locally while the mode is active so
+  wide equations do not trip Emacs' default image-size guard.
+- Edits invalidate affected previews and re-render them after an idle delay.
+- Failures are aggregated into one report buffer per source buffer, named like
+  =*org-fast-latex-preview-failure*: notes.org=.
+- Repeated invalid fragments are grouped by error summary, with sample lines so
+  hostile corpora stay readable instead of flooding the minibuffer or buffer list.
+
+* Known Limitations
+
+- Graphical Emacs only.  The package does not target terminal image previews.
+- SVG previews via =dvisvgm= only.
+- No export integration.  OFLP is an in-buffer preview package.
+- No generic preview API for non-LaTeX Org objects.
+- Very large first-time renders are still bounded by external TeX + =dvisvgm=
+  throughput, even though the batch pipeline is optimized aggressively.
+
+* Failure Handling
+
+The package is tuned to fail quietly under large invalid corpora:
+
+- Failing batches are recursively split by default so valid neighbors still render.
+- Terminal failures are aggregated into a single report buffer instead of one log
+  buffer per failed fragment or batch.
+- Dirty refreshes drop stale failure entries for the edited range before rerendering.
+- Buffer kill and revert tear down jobs, timers, overlays, and failure state cleanly.
+- Corrupt cache entries are treated as misses and regenerated automatically.
+
+Relevant knobs:
+
+- =org-fast-latex-preview-max-concurrent-jobs=
+  Caps subprocess fanout for stability under large refreshes or failure splitting.
+- =org-fast-latex-preview-failure-strategy=
+  Defaults to =split= to isolate bad fragments.
+- =org-fast-latex-preview-max-failure-groups=
+  Limits how many distinct error groups are shown in the failure report.
+- =org-fast-latex-preview-max-failure-samples=
+  Limits how many sample fragments are shown per error group.
+- =org-fast-latex-preview-max-image-size=
+  Sets a buffer-local =max-image-size= while the mode is active.
+
+* Development
+
+Compile:
+
+#+begin_src shell
+make compile
+#+end_src
+
+Run tests:
+
+#+begin_src shell
+make test
+#+end_src
+
+Generate deterministic stress corpora:
+
+#+begin_src shell
+make stress-generate
+#+end_src
+
+Run the stress benchmark/check harness:
+
+#+begin_src shell
+make stress-bench
+#+end_src
+
+`make stress-bench` reuses the current `stress/generated/manifest.json`.
+When you want to select a fresh corpus profile, prefer `make stress-check
+PROFILE=...`, which regenerates the manifest first.
+
+Run generation plus the full harness:
+
+#+begin_src shell
+make stress-check
+#+end_src
+
+Select a single profile:
+
+#+begin_src shell
+make stress-check PROFILE=throughput-50k
+#+end_src
+
+Run the full chaos suite on a valid large corpus:
+
+#+begin_src shell
+make stress-chaos PROFILE=edit-churn-10k
+#+end_src
+
+Run the chaos suite plus repeated soak cycles:
+
+#+begin_src shell
+make stress-soak PROFILE=edit-churn-10k SOAK_CYCLES=12
+#+end_src
+
+The hostile invalid corpus profile is the one to watch for rough edges:
+
+#+begin_src shell
+make stress-check PROFILE=failure-mixed-10k
+#+end_src
+
+On the current implementation, that profile completes with one aggregated failure
+buffer and the expected =9900= successful overlays out of =10000= fragments.
+
+The valid-corpus lifecycle abuse path is currently exercised on
+=edit-churn-10k=.  The latest full chaos run completed successfully, and a
+12-cycle soak run completed with expected overlay counts and no hidden worker
+buffer leaks.

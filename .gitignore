@@ -1,0 +1,4 @@
+*.elc
+.pkg-lint/
+stress/generated/
+stress/results/

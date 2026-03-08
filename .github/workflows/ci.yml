@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        emacs_version:
+          - "29.4"
+          - "30.2"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install TeX and SVG toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dvisvgm texlive-latex-base texlive-latex-recommended texlive-fonts-recommended
+
+      - name: Compile, test, and lint
+        run: make check
