@@ -48,7 +48,7 @@ jobs:
       - name: Compile
         run: |
           if ! make compile >compile.log 2>&1; then
-            python3 -c 'import pathlib; text = pathlib.Path("compile.log").read_text(encoding="utf-8", errors="replace"); lines = text.splitlines(); detail = next((line.strip() for line in lines[1:] if line.strip()), "<no compiler output beyond command line>"); detail = detail.replace("%", "%25").replace("\\r", "%0D").replace("\\n", "%0A"); print(f"::error file=Makefile,line=11,title=make compile failed::{detail}")'
+            python3 -c 'import pathlib; text = pathlib.Path("compile.log").read_text(encoding="utf-8", errors="replace"); lines = [line.strip() for line in text.splitlines()[1:] if line.strip()]; detail = " | ".join(lines[:3]) if lines else "<no compiler output beyond command line>"; detail = detail.replace("%", "%25").replace("\\r", "%0D").replace("\\n", "%0A"); print(f"::error file=Makefile,line=11,title=make compile failed::{detail}")'
             cat compile.log
             exit 1
           fi
