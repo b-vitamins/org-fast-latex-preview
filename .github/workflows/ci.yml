@@ -57,6 +57,14 @@ jobs:
         run: |
           if ! make test >test.log 2>&1; then
             python3 -c 'import pathlib, re; text = pathlib.Path("test.log").read_text(encoding="utf-8", errors="replace"); blocks = re.findall(r"(?ms)^Test .*?^\\s*FAILED.*?$", text); fmt = lambda block: " | ".join(line.strip() for line in block.splitlines() if line.strip()); fallback = [line.strip() for line in text.splitlines()[1:] if line.strip() and not line.startswith("make: ***")]; detail = " || ".join(fmt(block) for block in blocks[:3]) if blocks else (" | ".join(fallback[-6:]) if fallback else "<no test output beyond command line>"); detail = detail.replace("%", "%25").replace("\\r", "%0D").replace("\\n", "%0A"); print(f"::error file=Makefile,line=18,title=make test failed::{detail}")'
+            emacs -Q --batch -L lisp -L test --eval "(setq load-prefer-newer t)" \
+              -l test/org-fast-latex-preview-test-support.el \
+              -l test/org-fast-latex-preview-cache-test.el \
+              -l test/org-fast-latex-preview-ui-test.el \
+              -l test/org-fast-latex-preview-render-test.el \
+              -l test/org-fast-latex-preview-test.el \
+              -l scripts/ci-ert-diagnostics.el >diagnostic.log 2>&1 || true
+            python3 -c 'import pathlib; text = pathlib.Path("diagnostic.log").read_text(encoding="utf-8", errors="replace"); lines = [line.strip() for line in text.splitlines() if line.strip()]; detail = " | ".join(lines[:6]) if lines else "<no diagnostic rerun output>"; detail = detail.replace("%", "%25").replace("\\r", "%0D").replace("\\n", "%0A"); print(f"::error file=Makefile,line=18,title=ERT diagnostic rerun::{detail}")'
             cat test.log
             exit 1
           fi
