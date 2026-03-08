@@ -54,7 +54,12 @@ jobs:
           fi
 
       - name: Test
-        run: make test
+        run: |
+          if ! make test >test.log 2>&1; then
+            python3 -c 'import pathlib; text = pathlib.Path("test.log").read_text(encoding="utf-8", errors="replace"); lines = [line.strip() for line in text.splitlines()[1:] if line.strip()]; detail = " | ".join(lines[:3]) if lines else "<no test output beyond command line>"; detail = detail.replace("%", "%25").replace("\\r", "%0D").replace("\\n", "%0A"); print(f"::error file=Makefile,line=18,title=make test failed::{detail}")'
+            cat test.log
+            exit 1
+          fi
 
       - name: Lint checkdoc
         run: make lint-checkdoc

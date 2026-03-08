@@ -12,6 +12,12 @@
 (require 'ox-latex)
 (require 'subr-x)
 
+(eval-when-compile
+  ;; Emacs 29 emits docstring-width warnings for `cl-defstruct' generated
+  ;; accessors with OFLP's long internal names.  `checkdoc' is the actual
+  ;; docstring gate for this file, so relax the byte-compiler limit here.
+  (setq byte-compile-docstring-max-column 200))
+
 (defgroup org-fast-latex-preview nil
   "Fast batched LaTeX previews for Org."
   :group 'org
