@@ -7,6 +7,10 @@ and this project follows [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Changed
+- Rewrote the README to a shorter technical overview plus minimal setup and
+  usage instructions.
+
 ### Fixed
 - CI now installs the LaTeX `preview` package required by the render pipeline
   and documents that dependency explicitly.
