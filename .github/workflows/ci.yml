@@ -36,7 +36,7 @@ jobs:
       - name: Verify toolchain
         run: |
           command -v emacs
-          emacs --version
+          emacs -Q --batch --eval "(progn (require 'org) (princ (format \"emacs=%s org=%s\n\" emacs-version (org-version nil t))))"
           python3 --version
           make --version
           command -v latex
