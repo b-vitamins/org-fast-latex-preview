@@ -33,5 +33,26 @@ jobs:
           sudo apt-get install -y dvisvgm texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
           kpsewhich preview.sty
 
-      - name: Compile, test, and lint
-        run: make check
+      - name: Verify toolchain
+        run: |
+          command -v emacs
+          emacs --version
+          python3 --version
+          make --version
+          command -v latex
+          latex --version
+          command -v dvisvgm
+          dvisvgm --version
+          kpsewhich preview.sty
+
+      - name: Compile
+        run: make compile
+
+      - name: Test
+        run: make test
+
+      - name: Lint checkdoc
+        run: make lint-checkdoc
+
+      - name: Lint package
+        run: make lint-package
