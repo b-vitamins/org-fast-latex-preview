@@ -7,7 +7,7 @@ and this project follows [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
-## [0.1.0] - Pending
+## [0.1.0] - 2026-03-08
 
 Initial public release of `org-fast-latex-preview`.
 
