@@ -10,6 +10,8 @@ and this project follows [Semantic Versioning](https://semver.org).
 ### Fixed
 - CI now installs the LaTeX `preview` package required by the render pipeline
   and documents that dependency explicitly.
+- CI byte-compilation now passes on runner Emacs builds by fixing a wrapped
+  docstring and declaring `max-image-size` for the compiler.
 
 ## [0.1.0] - Pending
 

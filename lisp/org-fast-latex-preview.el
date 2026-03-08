@@ -57,6 +57,8 @@
 (defvar org-fast-latex-preview--org-command-shims-installed nil
   "Non-nil when OFLP's Org command shims are currently installed.")
 
+(defvar max-image-size)
+
 (put 'org-fast-latex-preview--lifecycle-hooks-installed 'permanent-local t)
 (put 'org-fast-latex-preview--rerender-after-revert 'permanent-local t)
 

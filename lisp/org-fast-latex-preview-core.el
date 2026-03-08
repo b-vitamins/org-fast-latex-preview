@@ -188,9 +188,12 @@ When nil, show every distinct failure group."
 (defcustom org-fast-latex-preview-max-image-size 40.0
   "Buffer-local `max-image-size' used while OFLP mode is active.
 
-When nil, OFLP leaves `max-image-size' unchanged.  When an integer, it is
-interpreted as a pixel limit.  When a floating-point number, it is interpreted
-as a ratio relative to the selected frame size."
+When nil, OFLP leaves `max-image-size' unchanged.
+
+When an integer, it is interpreted as a pixel limit.
+
+When a floating-point number, it is interpreted as a ratio relative to
+the selected frame size."
   :type '(choice (const :tag "Keep current setting" nil)
                  (integer :tag "Pixel limit")
                  (float :tag "Frame-relative ratio")))
