@@ -117,6 +117,11 @@ END restrict clearing to a subrange when non-nil."
       (cl-some #'org-fast-latex-preview--overlay-p
                (overlays-in (point-min) (point-max)))))
 
+(defun org-fast-latex-preview--latex-element-p (datum)
+  "Return non-nil when DATUM is a LaTeX fragment or environment."
+  (memq (org-element-type datum)
+        '(latex-fragment latex-environment)))
+
 (defun org-fast-latex-preview--stop-runtime ()
   "Stop OFLP runtime activity in the current buffer without clearing overlays."
   (when (timerp org-fast-latex-preview--dirty-timer)
@@ -212,7 +217,7 @@ When REFRESH is non-nil, clear existing previews first."
 When REFRESH is non-nil, force a re-render."
   (interactive "P")
   (let ((datum (org-element-context)))
-    (unless (org-element-type-p datum '(latex-fragment latex-environment))
+    (unless (org-fast-latex-preview--latex-element-p datum)
       (user-error "Point is not on a LaTeX fragment"))
     (pcase-let* ((`(,beg . ,end)
                   (org-fast-latex-preview--trim-fragment
@@ -237,8 +242,7 @@ With a double prefix argument, refresh the whole buffer."
   (cond
    ((equal arg '(16))
     (org-fast-latex-preview-buffer t))
-   ((org-element-type-p (org-element-context)
-                        '(latex-fragment latex-environment))
+   ((org-fast-latex-preview--latex-element-p (org-element-context))
     (org-fast-latex-preview-at-point t))
    (t
     (org-fast-latex-preview-subtree t))))
@@ -277,8 +281,7 @@ Triple prefix argument:
           (org-fast-latex-preview-clear beg end)))))
    ((use-region-p)
     (org-fast-latex-preview-region (region-beginning) (region-end)))
-   ((org-element-type-p (org-element-context)
-                        '(latex-fragment latex-environment))
+   ((org-fast-latex-preview--latex-element-p (org-element-context))
     (org-fast-latex-preview-at-point))
    (t
     (org-fast-latex-preview-subtree))))
