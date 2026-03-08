@@ -48,15 +48,7 @@ jobs:
       - name: Compile
         run: |
           if ! make compile >compile.log 2>&1; then
-            python3 - <<'PY'
-import pathlib
-
-text = pathlib.Path("compile.log").read_text(encoding="utf-8",
-                                             errors="replace")
-snippet = text[:4000]
-snippet = snippet.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-print(f"::error file=Makefile,line=11,title=make compile failed::{snippet}")
-PY
+            python3 -c 'import pathlib; text = pathlib.Path("compile.log").read_text(encoding="utf-8", errors="replace"); snippet = text[:4000].replace("%", "%25").replace("\\r", "%0D").replace("\\n", "%0A"); print(f"::error file=Makefile,line=11,title=make compile failed::{snippet}")'
             cat compile.log
             exit 1
           fi
