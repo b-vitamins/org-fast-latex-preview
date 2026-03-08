@@ -12,6 +12,9 @@ and this project follows [Semantic Versioning](https://semver.org).
   and documents that dependency explicitly.
 - CI byte-compilation now passes on runner Emacs builds by fixing a wrapped
   docstring and declaring `max-image-size` for the compiler.
+- Killing the last OFLP buffer now removes global Org command shims cleanly.
+- Mode and revert regression tests now reset global state explicitly and wait
+  for queued batches, reducing CI-only timing and state-leak failures.
 
 ## [0.1.0] - Pending
 

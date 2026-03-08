@@ -94,40 +94,44 @@
         (should-not org-fast-latex-preview--dirty-timer)))))
 
 (ert-deftest org-fast-latex-preview-mode-leaves-org-preview-keybinding-alone ()
-  (org-fast-latex-preview-test--with-temp-org-buffer
-      "Inline $E=mc^2$.\n"
-    (org-fast-latex-preview-mode 1)
-    (should (eq (key-binding (kbd "C-c C-x C-l"))
-                #'org-latex-preview))
-    (org-fast-latex-preview-mode -1)
-    (should (eq (key-binding (kbd "C-c C-x C-l"))
-                #'org-latex-preview))))
+  (org-fast-latex-preview-test--with-clean-global-state
+    (org-fast-latex-preview-test--with-temp-org-buffer
+        "Inline $E=mc^2$.\n"
+      (let ((original-binding (key-binding (kbd "C-c C-x C-l"))))
+        (org-fast-latex-preview-mode 1)
+        (should (eq (key-binding (kbd "C-c C-x C-l"))
+                    original-binding))
+        (org-fast-latex-preview-mode -1)
+        (should (eq (key-binding (kbd "C-c C-x C-l"))
+                    original-binding))))))
 
 (ert-deftest org-fast-latex-preview-mode-routes-org-latex-preview ()
-  (org-fast-latex-preview-test--with-temp-org-buffer
-      "Inline $E=mc^2$.\n"
-    (let (captured-arg)
-      (cl-letf (((symbol-function 'display-graphic-p)
-                 (lambda (&optional _frame) t))
-                ((symbol-function 'org-fast-latex-preview)
-                 (lambda (&optional arg)
-                   (setq captured-arg arg))))
-        (org-fast-latex-preview-mode 1)
-        (org-latex-preview '(16)))
-      (should (equal '(16) captured-arg)))))
+  (org-fast-latex-preview-test--with-clean-global-state
+    (org-fast-latex-preview-test--with-temp-org-buffer
+        "Inline $E=mc^2$.\n"
+      (let (captured-arg)
+        (cl-letf (((symbol-function 'display-graphic-p)
+                   (lambda (&optional _frame) t))
+                  ((symbol-function 'org-fast-latex-preview)
+                   (lambda (&optional arg)
+                     (setq captured-arg arg))))
+          (org-fast-latex-preview-mode 1)
+          (org-latex-preview '(16)))
+        (should (equal '(16) captured-arg))))))
 
 (ert-deftest org-fast-latex-preview-mode-routes-org-clear-latex-preview ()
-  (org-fast-latex-preview-test--with-temp-org-buffer
-      "Inline $E=mc^2$.\n"
-    (let (captured-range)
-      (cl-letf (((symbol-function 'display-graphic-p)
-                 (lambda (&optional _frame) t))
-                ((symbol-function 'org-fast-latex-preview-clear)
-                 (lambda (&optional beg end)
-                   (setq captured-range (cons beg end)))))
-        (org-fast-latex-preview-mode 1)
-        (org-clear-latex-preview 8 16))
-      (should (equal '(8 . 16) captured-range)))))
+  (org-fast-latex-preview-test--with-clean-global-state
+    (org-fast-latex-preview-test--with-temp-org-buffer
+        "Inline $E=mc^2$.\n"
+      (let (captured-range)
+        (cl-letf (((symbol-function 'display-graphic-p)
+                   (lambda (&optional _frame) t))
+                  ((symbol-function 'org-fast-latex-preview-clear)
+                   (lambda (&optional beg end)
+                     (setq captured-range (cons beg end)))))
+          (org-fast-latex-preview-mode 1)
+          (org-clear-latex-preview 8 16))
+        (should (equal '(8 . 16) captured-range))))))
 
 (ert-deftest org-fast-latex-preview-can-leave-org-commands-unmodified ()
   (org-fast-latex-preview-test--with-temp-org-buffer
@@ -144,28 +148,31 @@
       (should (equal '(4) original-called)))))
 
 (ert-deftest org-fast-latex-preview-mode-does-not-remap-org-keybindings ()
-  (org-fast-latex-preview-test--with-temp-org-buffer
-      "Inline $E=mc^2$.\n"
-    (org-fast-latex-preview-mode 1)
-    (should (eq 'org-latex-preview
-                (key-binding (kbd "C-c C-x C-l"))))))
-
-(ert-deftest org-fast-latex-preview-mode-does-not-mutate-org-preview-state ()
-  (let ((original-process org-preview-latex-default-process)
-        (original-options (copy-tree org-format-latex-options))
-        (original-header org-format-latex-header)
-        (original-packages (copy-tree org-latex-packages-alist)))
+  (org-fast-latex-preview-test--with-clean-global-state
     (org-fast-latex-preview-test--with-temp-org-buffer
         "Inline $E=mc^2$.\n"
-      (org-fast-latex-preview-mode 1)
+      (let ((original-binding (key-binding (kbd "C-c C-x C-l"))))
+        (org-fast-latex-preview-mode 1)
+        (should (eq original-binding
+                    (key-binding (kbd "C-c C-x C-l"))))))))
+
+(ert-deftest org-fast-latex-preview-mode-does-not-mutate-org-preview-state ()
+  (org-fast-latex-preview-test--with-clean-global-state
+    (let ((original-process org-preview-latex-default-process)
+          (original-options (copy-tree org-format-latex-options))
+          (original-header org-format-latex-header)
+          (original-packages (copy-tree org-latex-packages-alist)))
+      (org-fast-latex-preview-test--with-temp-org-buffer
+          "Inline $E=mc^2$.\n"
+        (org-fast-latex-preview-mode 1)
+        (should (eq original-process org-preview-latex-default-process))
+        (should (equal original-options org-format-latex-options))
+        (should (equal original-header org-format-latex-header))
+        (should (equal original-packages org-latex-packages-alist)))
       (should (eq original-process org-preview-latex-default-process))
       (should (equal original-options org-format-latex-options))
       (should (equal original-header org-format-latex-header))
-      (should (equal original-packages org-latex-packages-alist)))
-    (should (eq original-process org-preview-latex-default-process))
-    (should (equal original-options org-format-latex-options))
-    (should (equal original-header org-format-latex-header))
-    (should (equal original-packages org-latex-packages-alist))))
+      (should (equal original-packages org-latex-packages-alist)))))
 
 (ert-deftest org-fast-latex-preview-global-mode-enables-org-buffers-only ()
   (unwind-protect
@@ -371,36 +378,59 @@
 
 (ert-deftest org-fast-latex-preview-rerenders-after-revert ()
   (skip-unless (org-fast-latex-preview-test--tools-available-p))
-  (let* ((cache-dir (make-temp-file "oflp-cache-" t))
-         (path (make-temp-file "oflp-revert-" nil ".org"))
-         (initial "Inline $E=mc^2$.\n")
-         (updated "Inline $E=mc^2$.\n\nSecond $a^2+b^2=c^2$.\n")
-         (org-fast-latex-preview-preamble-source 'lean)
-         (org-fast-latex-preview-compiler 'latex)
-         (org-fast-latex-preview-debug nil)
-         buffer)
-    (unwind-protect
-        (let ((org-fast-latex-preview-cache-directory cache-dir))
-          (with-temp-file path
-            (insert initial))
-          (setq buffer (find-file-noselect path))
-          (with-current-buffer buffer
-            (org-mode)
-            (org-fast-latex-preview-mode 1)
-            (org-fast-latex-preview-buffer t)
-            (org-fast-latex-preview-test--wait-for-jobs)
-            (should (= 1 (length (org-fast-latex-preview-test--preview-overlays))))
+  (org-fast-latex-preview-test--with-clean-global-state
+    (let* ((cache-dir (make-temp-file "oflp-cache-" t))
+           (path (make-temp-file "oflp-revert-" nil ".org"))
+           (initial "Inline $E=mc^2$.\n")
+           (updated "Inline $E=mc^2$.\n\nSecond $a^2+b^2=c^2$.\n")
+           (org-fast-latex-preview-preamble-source 'lean)
+           (org-fast-latex-preview-compiler 'latex)
+           (org-fast-latex-preview-debug nil)
+           buffer)
+      (unwind-protect
+          (let ((org-fast-latex-preview-cache-directory cache-dir))
             (with-temp-file path
-              (insert updated))
-            (revert-buffer :ignore-auto :noconfirm)
-            (org-fast-latex-preview-test--wait-for-jobs)
-            (should (= 2 (length (org-fast-latex-preview-test--preview-overlays))))))
-      (when (buffer-live-p buffer)
-        (kill-buffer buffer))
-      (when (file-exists-p path)
-        (delete-file path))
-      (delete-directory cache-dir t)
-      (org-fast-latex-preview-test--cleanup-failure-buffers))))
+              (insert initial))
+            (setq buffer (find-file-noselect path))
+            (with-current-buffer buffer
+              (org-mode)
+              (org-fast-latex-preview-mode 1)
+              (org-fast-latex-preview-buffer t)
+              (org-fast-latex-preview-test--wait-for-jobs)
+              (org-fast-latex-preview-test--wait-for-overlay-count 1)
+              (with-temp-file path
+                (insert updated))
+              (revert-buffer :ignore-auto :noconfirm)
+              (org-fast-latex-preview-test--wait-for-jobs)
+              (org-fast-latex-preview-test--wait-for-overlay-count 2)))
+        (when (buffer-live-p buffer)
+          (kill-buffer buffer))
+        (when (file-exists-p path)
+          (delete-file path))
+        (delete-directory cache-dir t)
+        (org-fast-latex-preview-test--cleanup-failure-buffers)))))
+
+(ert-deftest org-fast-latex-preview-killing-last-buffer-removes-org-shims ()
+  (org-fast-latex-preview-test--with-clean-global-state
+    (let ((buffer (generate-new-buffer " *oflp-kill-shims*")))
+      (unwind-protect
+          (progn
+            (with-current-buffer buffer
+              (org-mode)
+              (insert "Inline $E=mc^2$.\n")
+              (org-fast-latex-preview-mode 1))
+            (should org-fast-latex-preview--org-command-shims-installed)
+            (should
+             (advice-member-p #'org-fast-latex-preview--advice-org-latex-preview
+                              'org-latex-preview))
+            (kill-buffer buffer)
+            (setq buffer nil)
+            (should-not org-fast-latex-preview--org-command-shims-installed)
+            (should-not
+             (advice-member-p #'org-fast-latex-preview--advice-org-latex-preview
+                              'org-latex-preview)))
+        (when (buffer-live-p buffer)
+          (kill-buffer buffer))))))
 
 (ert-deftest org-fast-latex-preview-kill-buffer-cleans-up-active-jobs ()
   (skip-unless (org-fast-latex-preview-test--tools-available-p))

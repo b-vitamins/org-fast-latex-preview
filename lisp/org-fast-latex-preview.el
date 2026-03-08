@@ -162,7 +162,13 @@ END restrict clearing to a subrange when non-nil."
 
 (defun org-fast-latex-preview--kill-buffer ()
   "Tear down preview state before the current buffer is killed."
-  (org-fast-latex-preview--teardown-buffer))
+  (let ((had-mode org-fast-latex-preview-mode))
+    (org-fast-latex-preview--teardown-buffer)
+    ;; The buffer is about to disappear, so clear the local mode flag before
+    ;; deciding whether OFLP still needs its global Org command shims.
+    (setq org-fast-latex-preview-mode nil)
+    (when had-mode
+      (org-fast-latex-preview--maybe-remove-org-command-shims))))
 
 (defun org-fast-latex-preview--ensure-lifecycle-hooks ()
   "Install buffer-local lifecycle hooks for OFLP."
