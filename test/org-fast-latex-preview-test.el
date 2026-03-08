@@ -188,15 +188,35 @@
 
 (ert-deftest org-fast-latex-preview-mode-binds-max-image-size-locally ()
   (let ((org-fast-latex-preview-max-image-size 40.0)
-        (original max-image-size))
+        (original-boundp (boundp 'max-image-size))
+        (original-value (and (boundp 'max-image-size)
+                             (symbol-value 'max-image-size))))
     (org-fast-latex-preview-test--with-temp-org-buffer
         "Inline $E=mc^2$.\n"
       (org-fast-latex-preview-mode 1)
       (should (local-variable-p 'max-image-size))
-      (should (equal 40.0 max-image-size))
+      (should (equal 40.0 (symbol-value 'max-image-size)))
       (org-fast-latex-preview-mode -1)
       (should-not (local-variable-p 'max-image-size))
-      (should (equal original max-image-size)))))
+      (if original-boundp
+          (should (equal original-value (symbol-value 'max-image-size)))
+        (should-not (boundp 'max-image-size))))))
+
+(ert-deftest org-fast-latex-preview-mode-enables-with-unbound-max-image-size ()
+  (org-fast-latex-preview-test--with-clean-global-state
+    (org-fast-latex-preview-test--with-temp-org-buffer
+        "Inline $E=mc^2$.\n"
+      (let ((org-fast-latex-preview-max-image-size 40.0))
+        (makunbound 'max-image-size)
+        (unwind-protect
+            (progn
+              (org-fast-latex-preview-mode 1)
+              (should (local-variable-p 'max-image-size))
+              (should (equal 40.0 (symbol-value 'max-image-size)))
+              (org-fast-latex-preview-mode -1)
+              (should-not (local-variable-p 'max-image-size))
+              (should-not (boundp 'max-image-size)))
+          (set 'max-image-size nil))))))
 
 (ert-deftest org-fast-latex-preview-renders-and-reuses-cache ()
   (skip-unless (org-fast-latex-preview-test--tools-available-p))

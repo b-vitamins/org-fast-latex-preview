@@ -57,8 +57,6 @@
 (defvar org-fast-latex-preview--org-command-shims-installed nil
   "Non-nil when OFLP's Org command shims are currently installed.")
 
-(defvar max-image-size)
-
 (put 'org-fast-latex-preview--lifecycle-hooks-installed 'permanent-local t)
 (put 'org-fast-latex-preview--rerender-after-revert 'permanent-local t)
 
@@ -348,11 +346,14 @@ Triple prefix argument:
 (defun org-fast-latex-preview--enable-mode ()
   "Enable OFLP mode in the current buffer."
   (org-fast-latex-preview--install-org-command-shims)
-  (setq org-fast-latex-preview--saved-max-image-size max-image-size
+  (setq org-fast-latex-preview--saved-max-image-size
+        (and (boundp 'max-image-size)
+             (symbol-value 'max-image-size))
         org-fast-latex-preview--saved-max-image-size-local
         (local-variable-p 'max-image-size))
   (when org-fast-latex-preview-max-image-size
-    (setq-local max-image-size org-fast-latex-preview-max-image-size))
+    (set (make-local-variable 'max-image-size)
+         org-fast-latex-preview-max-image-size))
   (org-fast-latex-preview--ensure-lifecycle-hooks)
   (add-hook 'post-command-hook #'org-fast-latex-preview--post-command nil t)
   (add-hook 'after-change-functions #'org-fast-latex-preview--after-change nil t))
@@ -362,7 +363,8 @@ Triple prefix argument:
   (remove-hook 'post-command-hook #'org-fast-latex-preview--post-command t)
   (remove-hook 'after-change-functions #'org-fast-latex-preview--after-change t)
   (if org-fast-latex-preview--saved-max-image-size-local
-      (setq-local max-image-size org-fast-latex-preview--saved-max-image-size)
+      (set (make-local-variable 'max-image-size)
+           org-fast-latex-preview--saved-max-image-size)
     (kill-local-variable 'max-image-size))
   (setq org-fast-latex-preview--saved-max-image-size nil
         org-fast-latex-preview--saved-max-image-size-local nil)

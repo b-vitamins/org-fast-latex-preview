@@ -15,6 +15,8 @@ and this project follows [Semantic Versioning](https://semver.org).
 - Killing the last OFLP buffer now removes global Org command shims cleanly.
 - Mode and revert regression tests now reset global state explicitly and wait
   for queued batches, reducing CI-only timing and state-leak failures.
+- OFLP now binds `max-image-size` safely even in clean batch Emacs sessions
+  where `image` has not initialized that variable yet.
 
 ## [0.1.0] - Pending
 
