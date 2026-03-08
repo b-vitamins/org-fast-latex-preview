@@ -22,7 +22,7 @@ math-heavy Org buffers feel fast and boring to use.”
 
 - Emacs 29.1+
 - Org 9.7+
-- =latex= and =dvisvgm=
+- =latex=, =dvisvgm=, and the LaTeX =preview= package
 
 Optional:
 

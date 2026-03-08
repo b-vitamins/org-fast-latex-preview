@@ -20,7 +20,10 @@
 (defun org-fast-latex-preview-test--tools-available-p ()
   "Return non-nil when external preview tools are available."
   (and (executable-find "latex")
-       (executable-find "dvisvgm")))
+       (executable-find "dvisvgm")
+       (executable-find "kpsewhich")
+       (with-temp-buffer
+         (eq 0 (call-process "kpsewhich" nil t nil "preview.sty")))))
 
 (defun org-fast-latex-preview-test--wait-for-jobs (&optional timeout)
   "Wait for active preview jobs, failing after TIMEOUT seconds."

@@ -7,6 +7,10 @@ and this project follows [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Fixed
+- CI now installs the LaTeX `preview` package required by the render pipeline
+  and documents that dependency explicitly.
+
 ## [0.1.0] - Pending
 
 Initial public release of `org-fast-latex-preview`.
